@@ -1,0 +1,32 @@
+﻿# =========================
+# PASTAS DE BUILD
+# =========================
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+
+# =========================
+# ARQUIVOS DO RIDER / JETBRAINS 
+# =========================
+.idea/
+*.sln.iml
+/shelf/
+/workspace.xml
+/projectSettingsUpdater.xml
+/modules.xml
+/contentModel.xml
+/.idea.Challenge_Development_.NET.iml
+/encodings.xml
+/indexLayout.xml
+/vcs.xml
+/queries/
+/dataSources/
+/dataSources.local.xml
+/httpRequests/
+
+# =========================
+# SISTEMA OPERACIONAL 
+# =========================
+.DS_Store
+Thumbs.db
