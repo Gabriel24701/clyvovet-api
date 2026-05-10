@@ -1,0 +1,6 @@
+@ClyvoVet.Api_HostAddress = http://localhost:5139
+
+GET {{ClyvoVet.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
