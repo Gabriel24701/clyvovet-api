@@ -1,0 +1,17 @@
+﻿version: '3.8'
+
+services:
+  clyvo-api:
+    build: .
+    container_name: clyvo-api-container
+    ports:
+      - "5139:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__OracleDbConnection=User Id=seu_user;Password=sua_senha;Data Source=db-clyvo:1521/XEPDB1
+    networks:
+      - clyvo-network
+
+networks:
+  clyvo-network:
+    driver: bridge
