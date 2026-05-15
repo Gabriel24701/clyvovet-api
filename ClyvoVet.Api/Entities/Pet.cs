@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClyvoVet.Api.Models
+namespace ClyvoVet.Api.Entities
 {
     public class Pet
     {

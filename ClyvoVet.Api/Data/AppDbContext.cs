@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ClyvoVet.Api.Models;
+using ClyvoVet.Api.Entities;
 
 namespace ClyvoVet.Api.Data
 {

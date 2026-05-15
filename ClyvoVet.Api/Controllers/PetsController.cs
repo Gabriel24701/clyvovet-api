@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ClyvoVet.Api.Data;
-using ClyvoVet.Api.Models;
+using ClyvoVet.Api.Entities;
 
 namespace ClyvoVet.Api.Controllers
 {
