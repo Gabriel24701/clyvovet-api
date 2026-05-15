@@ -21,6 +21,12 @@ namespace ClyvoVet.Api.Entities
         [MinLength(6, ErrorMessage = "A senha deve ter pelo menos 6 caracteres.")]
         public string Password { get; set; } = string.Empty;
 
+		[StringLength(20)]
+		public string Phone { get; set; } = string.Empty;
+
+		[StringLength(200)]
+		public string Address { get; set; } = string.Empty;
+
         public ICollection<Pet>? Pets { get; set; } 
     }
 }
