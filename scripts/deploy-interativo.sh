@@ -385,7 +385,7 @@ CLOUDINIT_MOTD
             start_period: 120s
 
         clyvo-api:
-          image: ghcr.io/${GITHUB_ORG}/clyvovet-api:latest
+          image: clyvovetregistry.azurecr.io/clyvovet-api:latest
           container_name: clyvo-api
           restart: unless-stopped
           user: app
