@@ -1,0 +1,57 @@
+﻿name: ClyvoVet CD - Build & Deploy
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+
+  build-and-push:
+    name: Build & Push to ACR
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout do código-fonte
+        uses: actions/checkout@v4
+
+      - name: Login no Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build da imagem Docker
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/clyvovet-api:latest ./Challenge_Development_.NET/ClyvoVet.Api
+
+      - name: Push da imagem para o ACR
+        run: |
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/clyvovet-api:latest
+
+
+  deploy-to-vm:
+    name: Deploy to Azure VM
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🔌 Conectar na VM e Atualizar Stack
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          password: ${{ secrets.VM_PASSWORD }}
+          script: |
+            # 1. Faz o login no cofre do ACR de dentro da VM
+            echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
+            
+            # 2. Entra na pasta da nossa infraestrutura
+            cd /opt/clyvovet
+            
+            # 3. Baixa a nova versão do sistema (ignorando o que está rodando)
+            docker compose pull clyvo-api
+            
+            # 4. Levanta a aplicação com a imagem fresca (sem mexer no Oracle)
+            docker compose up -d clyvo-api
