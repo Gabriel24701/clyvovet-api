@@ -11,16 +11,6 @@
 # DESCRICAO : Provisioner interativo para Azure VM com Docker, .NET 8 e Oracle DB
 # STACK     : .NET 8 API | Oracle DB (gvenzl/oracle-free) | Docker Compose | Azure
 # VERSAO    : 2.1.0
-#
-# HISTORICO DE CORRECOES (v2.1.0):
-#   [FIX-1] Forcado encoding UTF-8 no Python/Azure CLI (PYTHONIOENCODING, PYTHONUTF8)
-#   [FIX-2] Removidos caracteres non-ASCII (— . ·) do corpo do YAML gerado
-#   [FIX-3] Heredoc externo trocado por 'CLOUDINIT_HEADER' (aspas) para evitar
-#           expansao indesejada de variaveis bash dentro do YAML
-#   [FIX-4] MOTD movido de runcmd (heredoc aninhado) para write_files
-#   [FIX-5] iconv sanitiza o YAML final para ASCII puro antes de passar ao az vm create
-#   [FIX-6] Validacao YAML via python3 com caminho de arquivo passado por argumento
-#           (evita erro de encoding no open() do Python)
 # ==============================================================================
 
 # -- Modo estrito: aborta em erros, variaveis nao definidas e falhas em pipes --
@@ -73,12 +63,6 @@ readonly SYM_GLOBE="🌐"
 
 # ==============================================================================
 # SECAO 1.5 -- FORCADO ENCODING UTF-8 PARA O AZURE CLI (Python)
-#
-# [FIX-1] O Azure CLI e escrito em Python. Em ambientes sem locale configurado,
-# o Python usa latin-1 por padrao ao ler arquivos, causando o erro:
-#   'latin-1' codec can't encode character '\uXXXX'
-# As tres variaveis abaixo garantem UTF-8 em todo I/O do processo Python
-# que o 'az' cria internamente, incluindo a leitura do --custom-data.
 # ==============================================================================
 export PYTHONIOENCODING="utf-8"
 export PYTHONUTF8=1          # Python 3.7+ -- garante UTF-8 em todo I/O
@@ -251,13 +235,13 @@ collect_parameters() {
     read -rp "  $(echo -e "${C_YELLOW}${SYM_CLOUD}  Resource Group${C_RESET} ${C_DIM}(ex: rg-clyvovet-prod):${C_RESET} ")" RG_NAME
     [[ -n "${RG_NAME}" ]] || abort "Resource Group nao pode ser vazio."
 
-    read -rp "  $(echo -e "${C_YELLOW}${SYM_GLOBE}  Regiao Azure${C_RESET}    ${C_DIM}(ex: brazilsouth):${C_RESET}        ")" LOCATION
+    read -rp "  $(echo -e "${C_YELLOW}${SYM_GLOBE}  Regiao Azure${C_RESET}    ${C_DIM}(ex: canadacentral):${C_RESET}        ")" LOCATION
     [[ -n "${LOCATION}" ]] || abort "Regiao nao pode ser vazia."
 
     read -rp "  $(echo -e "${C_YELLOW}${SYM_VET}   Nome da VM${C_RESET}      ${C_DIM}(ex: vm-clyvovet-api):${C_RESET}     ")" VM_NAME
     [[ -n "${VM_NAME}" ]] || abort "Nome da VM nao pode ser vazio."
 
-    read -rp "  $(echo -e "${C_YELLOW}${SYM_KEY}   Usuario Admin:${C_RESET}                                  ")" ADMIN_USER
+    read -rp "  $(echo -e "${C_YELLOW}${SYM_KEY}   Usuario Admin:${C_RESET}                                ")" ADMIN_USER
     [[ -n "${ADMIN_USER}" ]] || abort "Usuario Admin nao pode ser vazio."
 
     _prompt_password
@@ -303,24 +287,12 @@ select_vm_size() {
 
 # ==============================================================================
 # SECAO 7 -- GERACAO DO PAYLOAD CLOUD-INIT
-#
-# ESTRATEGIA DE HEREDOCS (evita os tres bugs anteriores):
-#
-# [FIX-3] Todos os heredocs que geram YAML usam delimitador com aspas simples
-#         ('CLOUDINIT_XXX'), desabilitando expansao bash. Variaveis do bash que
-#         precisam ser injetadas no YAML sao escritas via echo/printf separados.
-#
-# [FIX-4] O MOTD foi movido para write_files (nao usa mais heredoc aninhado
-#         dentro do runcmd, que era a causa do parse quebrado no cloud-init v1).
-#
-# [FIX-2] Todos os caracteres non-ASCII foram removidos dos comentarios e
-#         conteudos gerados: -- em vez de —, | em vez de ·, -> em vez de ->
 # ==============================================================================
 
 generate_cloud_init() {
     step_header "05" "${SYM_SYRINGE}  Gerando Payload cloud-init"
 
-    # ---- Bloco 1: cabecalho + packages + runcmd (sem expansao bash) ----------
+    # ---- Bloco 1: cabecalho + packages + runcmd  ----------
     cat > "${CLOUD_INIT_FILE}" << 'CLOUDINIT_HEADER'
 #cloud-config
 # ==============================================================================
@@ -350,13 +322,11 @@ runcmd:
 CLOUDINIT_HEADER
 
     # ---- Injeta linhas que precisam de expansao bash -------------------------
-    # [FIX-3] Unico ponto de expansao controlada -- apenas variaveis simples
     printf '  - usermod -aG docker %s\n'                "${ADMIN_USER}" >> "${CLOUD_INIT_FILE}"
     printf '  - mkdir -p /opt/clyvovet\n'                               >> "${CLOUD_INIT_FILE}"
     printf '  - chown -R %s:%s /opt/clyvovet\n'         "${ADMIN_USER}" "${ADMIN_USER}" >> "${CLOUD_INIT_FILE}"
 
     # ---- Bloco 2: write_files -- MOTD (sem expansao bash) -------------------
-    # [FIX-4] MOTD via write_files elimina o heredoc aninhado no runcmd
     cat >> "${CLOUD_INIT_FILE}" << 'CLOUDINIT_MOTD'
 
 write_files:
@@ -378,8 +348,6 @@ write_files:
 CLOUDINIT_MOTD
 
     # ---- Bloco 3: docker-compose.yml (sem expansao bash) --------------------
-    # As variaveis ${...} aqui sao do Docker Compose, NAO do bash --
-    # o heredoc com aspas garante que o bash nao as expanda.
     cat >> "${CLOUD_INIT_FILE}" << 'CLOUDINIT_COMPOSE'
   - path: /opt/clyvovet/docker-compose.yml
     permissions: '0644'
@@ -444,7 +412,7 @@ CLOUDINIT_MOTD
 
 CLOUDINIT_COMPOSE
 
-    # ---- Bloco 4: .env.example (owner precisa de expansao bash) -------------
+    # ---- Bloco 4: .env.example -------------
     cat >> "${CLOUD_INIT_FILE}" << CLOUDINIT_ENV
   - path: /opt/clyvovet/.env.example
     owner: ${ADMIN_USER}:${ADMIN_USER}
@@ -461,8 +429,6 @@ CLOUDINIT_COMPOSE
 CLOUDINIT_ENV
 
     # ---- Validacao YAML via python3 -----------------------------------------
-    # [FIX-6] Passa o caminho como argumento (sys.argv[1]) para evitar que o
-    # open() do Python herde o encoding errado do ambiente ao ler o arquivo.
     if command -v python3 &>/dev/null; then
         if python3 - "${CLOUD_INIT_FILE}" << 'PYEOF' 2>>"${LOG_FILE}"
 import sys, yaml
@@ -503,9 +469,6 @@ provision_virtual_machine() {
     log_info "Criando VM '${C_BOLD}${VM_NAME}${C_RESET}' (SKU: ${C_BOLD}${VM_SIZE}${C_RESET})..."
     log_info "${C_DIM}Isso pode levar alguns minutos. Por favor, aguarde...${C_RESET}"
 
-    # [FIX-5] Sanitiza o cloud-init para ASCII puro via iconv antes de
-    # passar ao Azure CLI. Garante que nenhum caracter non-ASCII (mesmo que
-    # tenha escapado da geracao) quebre o codec do Python internamente no 'az'.
     if command -v iconv &>/dev/null; then
         iconv -f utf-8 -t ascii//TRANSLIT \
             "${CLOUD_INIT_FILE}" > "${CLOUD_INIT_SAFE}" 2>>"${LOG_FILE}" \
@@ -516,8 +479,6 @@ provision_virtual_machine() {
         log_warn "iconv ausente -- usando cloud-init sem sanitizacao ASCII."
     fi
 
-    # [FIX-1] PYTHONIOENCODING=utf-8 repetido inline como camada extra de
-    # seguranca, mesmo ja exportado globalmente na Secao 1.5
     if ! PYTHONIOENCODING=utf-8 az vm create \
             --resource-group   "${RG_NAME}" \
             --name             "${VM_NAME}" \

@@ -14,7 +14,6 @@ namespace ClyvoVet.Api.Data
         {
             base.OnModelCreating(modelBuilder);
             
-            // Relacionamento 1 para N (Tutor tem vários Pets)
             modelBuilder.Entity<Pet>()
                 .HasOne(p => p.Owner)
                 .WithMany(u => u.Pets)

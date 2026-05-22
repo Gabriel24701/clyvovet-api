@@ -14,11 +14,8 @@ namespace ClyvoVet.Api.Entities
         public DateTime NextCheckup { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Foreign Key
         public Guid OwnerId { get; set; }
         public User Owner { get; set; } = null!;
         
-        // public ICollection<Vaccine> Vaccines { get; set; } = new List<Vaccine>();
-        // public ICollection<Medication> Medications { get; set; } = new List<Medication>();
     }
 }

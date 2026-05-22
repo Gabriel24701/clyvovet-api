@@ -1,6 +1,5 @@
 ﻿name: .NET API CI Pipeline
 
-# Define quando a pipeline vai rodar
 on:
   push:
     branches: [ "main", "develop" ]
