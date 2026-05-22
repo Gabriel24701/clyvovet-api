@@ -24,7 +24,7 @@ jobs:
 
       - name: Build da imagem Docker
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/clyvovet-api:latest ./Challenge_Development_.NET/ClyvoVet.Api
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/clyvovet-api:latest ./ClyvoVet.Api
 
       - name: Push da imagem para o ACR
         run: |
