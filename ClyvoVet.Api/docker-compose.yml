@@ -1,17 +1,54 @@
-﻿version: '3.8'
-
-services:
-  clyvo-api:
-    build: .
-    container_name: clyvo-api-container
-    ports:
-      - "5139:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__OracleDbConnection=User Id=seu_user;Password=sua_senha;Data Source=db-clyvo:1521/XEPDB1
-    networks:
-      - clyvo-network
+﻿name: clyvovet
 
 networks:
   clyvo-network:
     driver: bridge
+
+volumes:
+  clyvovet_oracle_data:
+
+services:
+
+  db-oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: db-oracle
+    restart: unless-stopped
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_ROOT_PASSWORD}
+      APP_USER: ${ORACLE_APP_USER}
+      APP_USER_PASSWORD: ${ORACLE_APP_PASSWORD}
+    volumes:
+      - clyvovet_oracle_data:/opt/oracle/oradata
+    networks:
+      - clyvo-network
+    ports:
+      - "1521:1521"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+
+  clyvo-api:
+    image: clyvovetregistry.azurecr.io/clyvovet-api:latest
+    container_name: clyvo-api
+    restart: unless-stopped
+    user: app
+    depends_on:
+      db-oracle:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5139
+      ConnectionStrings__OracleDbConnection: "Data Source=db-oracle:1521/FREEPDB1;User Id=${ORACLE_APP_USER};Password=${ORACLE_APP_PASSWORD};"
+    ports:
+      - "5139:5139"
+    networks:
+      - clyvo-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5139/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

@@ -12,4 +12,7 @@ WORKDIR /app
 COPY --from=build /app/out .
 
 EXPOSE 8080
+
+USER app
+
 ENTRYPOINT ["dotnet", "ClyvoVet.Api.dll"]
