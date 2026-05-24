@@ -15,7 +15,7 @@ namespace ClyvoVet.Api.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public Guid OwnerId { get; set; }
-        public User Owner { get; set; } = null!;
+        public User? Owner { get; set; } = null!;
         
     }
 }
