@@ -393,9 +393,9 @@ CLOUDINIT_MOTD
             db-oracle:
               condition: service_healthy
           environment:
-            ASPNETCORE_ENVIRONMENT: Production
+            ASPNETCORE_ENVIRONMENT: Development
             ASPNETCORE_URLS: http://+:5139
-            ConnectionStrings__OracleDb: >-
+            ConnectionStrings__OracleDbConnection: >-
               Data Source=db-oracle:1521/FREEPDB1;
               User Id=${ORACLE_APP_USER};
               Password=${ORACLE_APP_PASSWORD};
